@@ -1,0 +1,39 @@
+name: Build Navi APK
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+          # Bỏ cache cũ để tránh xung đột Gradle version vừa hạ cấp
+          cache: 'gradle'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: 7.5
+          # Tự động dừng các Daemon cũ để tránh tốn RAM trên Runner
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }} # Optional
+
+      - name: Build Debug APK
+        # Thêm --stacktrace để nếu có lỗi nó sẽ hiện chi tiết "tận xương" cho mình sửa
+        run: ./gradlew assembleDebug --stacktrace
+
+      - name: Upload Navi APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Navi
+          path: "**/build/outputs/apk/debug/*.apk"
+          retention-days: 1
